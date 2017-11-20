@@ -1,0 +1,134 @@
+
+
+
+Definiton of Entities: first we ommit unnecessary words in twitts. What remains is locations, names and time. We use these words (Entities). 
+
+1- Data processing:
+	
+	1.1. We perform Part of Speech (POS) tagging and Named Entity Recognition (NER) on the text of each Tweet using the GATE Twitter POS model.
+	1.2. We extract all nouns, verbs and named entities (persons, locations, and organizations) from each tweet. Nouns and verbs are lemmatized, and en- 		tities are kept in their longest form to ensure that names are as distinguishing as possible (i.e. “Paul Ryan” rather than
+		“Paul” and “Ryan”).
+	1.3. Different entity classes of the same name are considered to be different. For example, “Spain” in the context of the football team (an 			organization) is dif- ferent from “Spain” the location, as this helps to retain as much distinguishing power as possible.
+	1.4. All terms and en- tities are converted to lowercase and any non-alphanumeric characters are removed (however whitespace is retained in the case 	 of named entities).
+
+
+2- Filtering: 
+	
+	2.1. The first filter removes tweets which do not contain any named entities. This is our most aggressive and effective filter, removing over 90% of 	 tweets. Only the twitts that have at least on entity are kept.
+	2.2. The second filter removes retweets. Retweets make up ap- proximately 30% of tweets and are simply a copy of some- one else’s tweet.
+	2.3. We also have a number of term-level filters that remove terms and entities that are unlikely to be related to an event or that are known to be associated with spam and noise.
+		2.3.1. As well as stop words and expletives, we remove terms as- sociated with watching television (“watch”, “film”,“movie”,
+			“episode”,etc.) orlisteningtomusic(“listen”,“song”,“play”, etc.).
+		2.3.2. We also re- move terms and entities associated with traditional news and broadcast agencies, such as “bbc news”, “cnn”, “fox news” and 		“reuters”.
+		2.3.3. Terms and entities under 3 characters in length are removed.
+
+3- Clustering: For the purpose of clustering, this can be thought of as having a unique Inverted Index for each named entity. For each named entity e in 	tweet d, a list of tweets D is retrieved from the inverted index for e and the maximum TF-IDF weight cosine similarity score is calculated between d 	and each tweet in D. If the maximum score is above a set threshold (usually in the range 0.45 − 0.55 [18]), then d is added to the same cluster as 	 	its nearest neighbor. If the nearest neighbor does not already belong to a cluster, then a new cluster is created containing both tweets and assigned 	 thought entity e. The new tweet is then added to the inverted index for entity e.
+
+   ????The term "term" in the pseudocode in the paper is not clear what is referring to. Do we have other words except entities in twitts???? 
+
+
+
+
+4- Burst Detection: For each entity, we have a set of windows starting from 5min to 360min. Each window has a mean and standard devietion which are 		updated periodically with the current entity frequency. The mean and SD of a window are updated based upon the length of window (5min window is 		updated every 5 minutes). When a tweet is no longer covered by the largest window it is removed from all inverted indexes. Once a tweet has been 		clustered and added to an entity’s inverted index, each window is checked, and if the number of tweets in a given window is greater than a threshold 	 then we say that the given window is bursty.
+
+5- Event Creation (we should do it): 
+	
+	5.1. Once a burst has been detected, an event is created and associated with the bursting entity for the duration of the burst.
+	5.2. We cannot simply take all of the tweets posted during the burst as these will contain background topics about an entity, such as dis- cussion 	 	 about visiting a location or listening to a particular artist’s music. To solve this, we propose the use of a number of heuristics to select 			significant clusters which are the most likely to be related to the event that caused the burst.
+	5.3. We require that the centroid time of a cluster (i.e. the average timestamp associated with all tweets in a cluster) is greater than Be, where Be 	  is the time at which the entity began to burst.
+	5.4. A cluster’s centroid time is updated as new tweets are added, ensuring that clusters which initially had a centroid time prior to the burst can 	 still be added to an event.
+	5.5. We also require that a cluster meets a minimum size threshold, usually between 5 and 20 tweets. This is to ensure that the cluster covers a 		significant portion of the event and to prevent small but noisy clusters from being included.
+	5.6. An event is kept alive as long as it has at least one bursting entity associated with it. Once all entities associated with an event have stopped 	   bursting, the event is finalized, and no more clusters or tweets can be added to it.
+
+
+bursting entity --> event --> some clusters are associated to it.
+are clusters the same as entities in inverted table?
+
+6- Event Merging (relating more than one entity to an event): ?
+
+	6.1. it is common for more than a single entity to be involved in an event, such as football matches or political debates.
+	6.2. We record the frequency of named entities and update them as new tweets are added to the event.
+	6.3. If an entity is mentioned in at least 50% of tweets then we say there is a potential link between the event and the entity. If such a potential 	 link is found, a number of checks are performed to ensure that the entity is viable and likely to be related to the event.
+		6.3.1. we check that the potential entity is bursting and therefore is already associated with an event.
+		6.3.2. 
+	6.4. If event E1 finds a potential link with entity e, and entity e passes both of the above checks, then event E1 is merged with the event belonging 	  to e.
+	6.5. Entity Normalization:
+		6.5.1. Entities are kept in their longest form rather than being split into individual components (e.g. ‘Barack Obama’, rather than ‘Barack’ and 	‘Obama’).
+		6.5.2. This can cause issues as multiple events could be created for different forms of the same entity.
+		6.5.3. To solve this, we perform a normalization step, which counts the last term in the names of people and organizations as a separate entity. 	For example, when count the number of occurrences of ‘Barack Obama’, we would also count the same number of occurrences of ‘Obama’.
+
+
+
+**********************************************************************************************************************************************************
+Some Notes:
+
+d: e1 t1 e2 t2 e3 t3 e4 t4 e5 e6 e7 e8.
+D: list of tweets is retrieved from the inverted index for e?.
+
+
+pass cluster id as input to NN to classify twitts.
+use LDA to find topics related to each twitt. So, predicted topics and their percentage can be used as input for NN to detect traffic event.
+
+location twitts: 3340
+
+**********************************************************************************************************************************************************
+
+possible solution:
+
+First Solutoin:
+
+	1- implement Event Creation and Event Merging like the paper explained above.
+
+	2- Select a twitt which we know it is about terrafic jam in prior and use it as indicator. Feed the indicator twitt to LDA and keep its predicted topics and corresponding percentages.
+
+	3- Use LDA to predict topics for each twitt in an event.
+
+	4- Compare a twitt's predicted topics against the indicator twitt's predicted topic. Cosine similarity could be a good criterai for similarity 			measurement.
+
+	5- If that particular event has a high similarity then it is about traffic.
+
+
+
+#######Second Solution:##########
+
+	1- Define some keywords related to traffic and congestion.
+
+	2- Create a one-hot-vector for each twitt. The length of the vector is number of the predefined keywords. For each twitt that has some of the key 		words entity related to those keywords is set to one.
+
+	3- Twitts' one-hot-vector is used as input to neural net for classification.
+
+	4- using ferq of an entity in the current window, the last one, the second last one, lenght of the wind, and ... we can train a neural net to detect whether a twitt in a given window is bursting.
+
+**********************************************************************************************************************************************************
+
+Steps must be takken for coursework:
+
+	1- Implement burst detection
+
+	2- Implement event creation
+
+	3- Implement event merging
+
+	4- Build a trainig data, annotate twitts, and divide them into traffic and non-traffic related twitts
+
+	5- Define most relevent words to traffic 
+
+	6- Build a func to proccess twitts and create a one-hot-vector for each twitt
+
+	7- Design and train NN
+
+	8- Evaluate the classifier  
+
+
+**********************************************************************************************************************************************************
+
+X could be time or frequency of the entity, but which one:
+
+1- If it is time then it is a large number becuase it is in ms. Moreover, we need to power time by 2 or 3 so the results are realy big numbers.
+2- If it is number of twitts in a window 
+
+
+
+**********************************************************************************************************************************************************
+
+
