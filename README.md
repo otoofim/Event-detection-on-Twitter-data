@@ -27,6 +27,6 @@ To see the report on the results, the script eval.py is used:
 python eval.py NUM-OF-WINDOWSwind.csv
 ```
 
-## Contributing
+## Report
 
-Please read [Event_Detction.pdf](https://github.com/otoofim/Event-detection-on-Twitter-data/blob/master/Event_Detection.pdf) for details on the implemented method.
+Please read [Event_Detction.pdf](https://github.com/otoofim/Event-detection-on-Twitter-data/blob/master/Event_Detection.pdf) for details on the implemented method and the report.
